@@ -1,0 +1,103 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.local' });
+import mongoose from 'mongoose';
+import Lecturer from '../../models/Lecturer.js'; // Path to the Lecturer model
+
+dotenv.config();
+
+const lecturersData = [
+  { "name": "Karyono, S.U., Dr., Prof.", "phone": "" },
+  { "name": "Kirbani Sri Brotopuspito, Dr., Prof.", "phone": "0818276660" },
+  { "name": "Agung Bambang Setio Utomo, S.U., Dr., Prof.", "phone": "08121551868" },
+  { "name": "Kusminarto, Dr., Prof.", "phone": "085747900534/ 08157913893" },
+  { "name": "Sismanto, Drs., M.Si., Dr., Prof.", "phone": "0818275077" },
+  { "name": "Kamsul Abraha, Drs., Ph.D., Prof.", "phone": "08122710165" },
+  { "name": "Pekik Nurwantoro, Drs., M.S., Ph.D.", "phone": "08122788025" },
+  { "name": "Harsojo, Drs., S.U., M.Sc., Dr.", "phone": "082137533438" },
+  { "name": "Arief Hermanto, S.U., M.Sc., Dr.", "phone": "08156866039" },
+  { "name": "Moh. Ali Joko Wasono, M.S., Dr.", "phone": "082166891716" },
+  { "name": "Wahyudi, M.S., Dr", "phone": "0816683411" },
+  { "name": "Wagini, Drs., M.S.", "phone": "081328454765" },
+  { "name": "M. Farchani Rosyid, Drs., M.Si., Dr.rer.nat.", "phone": "081329195250" },
+  { "name": "Sunarta, Drs., M.S.", "phone": "081578190555" },
+  { "name": "Bambang Murdaka Eka Jati, Drs., M.S.", "phone": "08164263774" },
+  { "name": "Kuwat Triyana, Drs., M.Si., Ph.D.", "phone": "083891221668" },
+  { "name": "Mitrayana, S.Si., M.Si., Dr.", "phone": "08156854834" },
+  { "name": "Yusril Yusuf, S.Si., M.Eng., Dr.Eng.", "phone": "081227597007" },
+  { "name": "Rinto Anugroho NQZ, S.Si., M.Si., Dr.Eng.", "phone": "085878394054" },
+  { "name": "Fahrudin Nugroho, S.Si., M.Si., Dr.Eng.", "phone": "081215627239" },
+  { "name": "Budi Eka Nurcahya, Drs., M.Si., Dr.", "phone": "081380929614" },
+  { "name": "Wiwit Suryanto, S.Si., M.Si., Dr.rer.nat.", "phone": "081578600075" },
+  { "name": "Imam Suyanto, Drs., M.Si.", "phone": "08156878796" },
+  { "name": "Edi Suharyadi, S.Si., M.Eng., Dr.Eng.", "phone": "081215333691" },
+  { "name": "Chotimah, Dra., M.S., Dr.", "phone": "083869025003" },
+  { "name": "Ari Setiawan, Drs., M.Si., Dr.Ing.", "phone": "08122989243" },
+  { "name": "Mirza Satriawan, S.Si., M.Si., Ph.D.", "phone": "081578823472" },
+  { "name": "Juliasih Partini, S.Si., M.Si., Dr.", "phone": "08157951303" },
+  { "name": "Dwi Satya Palupi, S.Si., M.Si., Dr.", "phone": "082136025935" },
+  { "name": "Eko Sulistya, Drs., M.Si., Dr.", "phone": "" },
+  { "name": "Ikhsan Setiawan, S.Si., M.Si.", "phone": "082133047575" },
+  { "name": "Sudarmaji, S.Si., M.Si., Dr.", "phone": "0816682639" },
+  { "name": "Eddy Hartantyo, S.Si., M.Si., Dr.", "phone": "08156879151" },
+  { "name": "Iman Santosa, S.Si., M.Sc., Dr.", "phone": "081225049148" },
+  { "name": "Ahmad Kusumaatmaja, S.Si., M.Sc., Dr.Eng.", "phone": "085201298902" },
+  { "name": "Mochammad Nukman, S.T., M.Sc., Dr.rer.nat.", "phone": "08112550041" },
+  { "name": "Moh. Adib Ulil Absor, S.Si., M.Sc., Ph.D.", "phone": "087738072516" },
+  { "name": "Romy Hanang Setya Budhi, M.Sc., Ph.D.", "phone": "085778921821" },
+  { "name": "Sintia Windhi Niasari, M.Eng., Dr.rer.nat.", "phone": "08122760240" },
+  { "name": "Muhammad Darwis Umar, S.Si., M.Si.", "phone": "" },
+  { "name": "Elida Lailiya Istiqomah, S.Si., M.Sc.", "phone": "+61451036960 Di Australia" },
+  { "name": "Muhammad Arifin, M.Sc.", "phone": "085743320165" },
+  { "name": "Eko Tri Sulistyani, Dra., M.Sc.", "phone": "081328004028/ 081225510908" },
+  { "name": "Waskito Nugroho, S.Si., M.Si., Dr.Eng.", "phone": "082243664411" },
+  { "name": "Ade Anggraini, S.Si., M.T., Dr.rer.nat.", "phone": "081328035486/ 089610450084" },
+  { "name": "Ari Dwi Nugraheni, S.Si., M.Sc., Dr.Sc.", "phone": "085201298901" },
+  { "name": "Sholihun, S.Si. M.Sc., Ph.D.", "phone": "082143196286" },
+  { "name": "Afif Rakhman, S.Si., M.T.", "phone": "085729290502" },
+  { "name": "Herlan Darmawan, S.Si., M.Sc.", "phone": "085643231094" },
+  { "name": "Chalis Setyadi, S.Si., M.Sc.", "phone": "085228900450" },
+  { "name": "Ibnu Jihad, M.Sc.", "phone": "0895364829488" },
+  { "name": "Devi Pramudyah Wardani, M.Sc.", "phone": "" },
+  { "name": "Adam Sukma Putra, M.Si.", "phone": "" },
+  { "name": "Idham Syah Alam, M.Sc.", "phone": "085743234837" },
+  { "name": "Waluyo, Drs., M.Sc., Ph.D.", "phone": "0818276661" },
+  { "name": "Suparwoto, Drs., M.Si", "phone": "08164261069" },
+  { "name": "Sudiartono, Drs., M.S.", "phone": "0818276663" },
+  { "name": "H. Tri Hartono", "phone": "08164261051" },
+  { "name": "Sugiyanto", "phone": "08157951296" },
+  { "name": "Yosef", "phone": "081288881540" },
+  { "name": "Catur Jaka Priyana", "phone": "087839811356" }
+];
+
+const connectDb = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Database connected');
+  } catch (error) {
+    console.error('Error connecting to the database:', error);
+    process.exit(1);
+  }
+};
+
+const seedLecturers = async () => {
+  try {
+    const existingLecturers = await Lecturer.find();
+    if (existingLecturers.length > 0) {
+      console.log('Lecturers already seeded');
+      return;
+    }
+
+    const createdLecturers = await Lecturer.insertMany(lecturersData);
+    console.log(`${createdLecturers.length} lecturers added to the database`);
+  } catch (error) {
+    console.error('Error seeding lecturers:', error);
+  }
+};
+
+const run = async () => {
+  await connectDb();
+  await seedLecturers();
+  mongoose.connection.close();
+};
+
+run();
