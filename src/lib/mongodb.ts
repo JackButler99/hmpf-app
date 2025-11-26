@@ -5,10 +5,10 @@ let isConnected = false;
 export async function connectToDB() {
   const uri = process.env.MONGODB_URI;
 
-  // ⛔ Jangan error saat BUILD
-  if (!uri) {
+  // ⛔ Skip DB ketika build atau uri = dummy
+  if (!uri || uri === "dummy") {
     if (process.env.NODE_ENV === "production") {
-      console.warn("MONGODB_URI missing during build, skipping DB connection.");
+      console.warn("Skipping DB connect during build.");
       return;
     }
     throw new Error("Please define the MONGODB_URI environment variable.");
