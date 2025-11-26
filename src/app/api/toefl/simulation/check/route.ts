@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
-import SimulationSession from "@/models/Toefl_SimulationSession";
+import SimulationSession from "@/models/SimulationSession";
 
 export async function POST(req: Request) {
   await connectToDB();
