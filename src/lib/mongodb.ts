@@ -1,23 +1,25 @@
-// src/lib/mongodb.ts
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable.');
-}
-
-let cached = (global as any).mongoose || { conn: null, promise: null };
+let isConnected = false;
 
 export async function connectToDB() {
-  if (cached.conn) return cached.conn;
+  const uri = process.env.MONGODB_URI;
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false,
-    }).then(mongoose => mongoose);
+  // ⛔ Jangan error saat BUILD
+  if (!uri) {
+    if (process.env.NODE_ENV === "production") {
+      console.warn("MONGODB_URI missing during build, skipping DB connection.");
+      return;
+    }
+    throw new Error("Please define the MONGODB_URI environment variable.");
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  if (isConnected) return;
+
+  try {
+    await mongoose.connect(uri);
+    isConnected = true;
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+  }
 }
