@@ -7,10 +7,10 @@ import Question from "@/models/Toefl_Question";
 // ============================================================
 export async function GET(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }   // ⬅ WAJIB promise
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;         // ⬅ WAJIB await
 
     await connectToDB();
     const question = await Question.findById(id).lean();
@@ -37,10 +37,10 @@ export async function GET(
 // ============================================================
 export async function PUT(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     await connectToDB();
 
     const body = await req.json();
@@ -87,10 +87,10 @@ export async function PUT(
 // ============================================================
 export async function DELETE(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     await connectToDB();
     const result = await Question.findByIdAndDelete(id);

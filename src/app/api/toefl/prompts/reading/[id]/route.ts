@@ -7,10 +7,10 @@ import ReadingPrompt from "@/models/Toefl_ReadingPrompt";
 // ============================================================
 export async function GET(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> } // ⬅ WAJIB promise
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;        // ⬅ WAJIB await
 
     await connectToDB();
     const prompt = await ReadingPrompt.findById(id).lean();
@@ -37,12 +37,12 @@ export async function GET(
 // ============================================================
 export async function PUT(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
-    await connectToDB();
+    const { id } = await context.params;
 
+    await connectToDB();
     const body = await req.json();
     const { title, passage, passageNumber } = body;
 
@@ -67,11 +67,7 @@ export async function PUT(
 
     const updated = await ReadingPrompt.findByIdAndUpdate(
       id,
-      {
-        title,
-        passage,
-        passageNumber,
-      },
+      { title, passage, passageNumber },
       { new: true }
     );
 
@@ -97,10 +93,11 @@ export async function PUT(
 // ============================================================
 export async function DELETE(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
+
     await connectToDB();
 
     const result = await ReadingPrompt.findByIdAndDelete(id);

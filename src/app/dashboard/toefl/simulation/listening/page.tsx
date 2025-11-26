@@ -120,18 +120,22 @@ export default function ListeningSimulationPage() {
   /* --------------------------------------------------
      TIMER
   --------------------------------------------------- */
-  useEffect(() => {
+   useEffect(() => {
     if (loading) return;
 
-    if (tickRef.current) clearInterval(tickRef.current);
+    if (tickRef.current !== null) {
+      clearInterval(tickRef.current);
+    }
 
-    tickRef.current = setInterval(
-      () => setTimeLeft((t) => t - 1),
-      1000
-    );
+    tickRef.current = setInterval(() => {
+      setTimeLeft((t) => t - 1);
+    }, 1000);
 
-    return () =>
-      tickRef.current && clearInterval(tickRef.current);
+    return () => {
+      if (tickRef.current !== null) {
+        clearInterval(tickRef.current);
+      }
+    };
   }, [loading]);
 
   /* --------------------------------------------------

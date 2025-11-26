@@ -1,19 +1,17 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const Toefl_QuestionSchema = new mongoose.Schema(
   {
     section: {
       type: String,
-      enum: ['reading', 'listening', 'grammar'],
+      enum: ["reading", "listening", "grammar"],
       required: true,
     },
 
+    // Tidak pakai refPath, bikin lebih aman
     promptId: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: 'section',
-      required: function () {
-        return this.section !== 'grammar';
-      },
+      default: null,
     },
 
     questionText: {
@@ -24,32 +22,33 @@ const Toefl_QuestionSchema = new mongoose.Schema(
 
     options: {
       type: [String],
-      validate: [(val: string[]) => val.length === 4, 'Exactly 4 options required'],
+      validate: [
+        (val: string[]) => val.length === 4,
+        "Exactly 4 options required",
+      ],
       required: true,
     },
 
     correctAnswer: {
       type: String,
-      enum: ['A', 'B', 'C', 'D'],
+      enum: ["A", "B", "C", "D"],
       required: true,
     },
 
     explanation: {
       type: String,
-      default: '',
+      default: "",
       trim: true,
     },
 
     question_number: {
       type: Number,
-      required: function () {
-        return this.section === 'listening';
-      },
       min: 1,
+      default: null, // TS friendly
     },
   },
   { timestamps: true }
 );
 
 export default mongoose.models.Toefl_Question ||
-  mongoose.model('Toefl_Question', Toefl_QuestionSchema);
+  mongoose.model("Toefl_Question", Toefl_QuestionSchema);

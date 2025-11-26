@@ -41,14 +41,13 @@ type HistoryDocLean = {
 --------------------------------------------------------- */
 export async function GET(
   req: NextRequest,
-  {params}: {params: {id: string}}
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
 
     await connectToDB();
 
-    // Jelaskan tipe hasil lean() agar TS tenang (tanpa ubah data)
     const history = (await Toefl_SimulationHistory.findById(id).lean()) as
       | HistoryDocLean
       | null;
@@ -62,9 +61,10 @@ export async function GET(
     ----------------------------------------------------- */
     const qids = (history.questions as HistoryRow[]).map((q) => q.questionId);
 
+    // 🔥 FIX: double cast untuk lean()
     const qdocs = (await Toefl_Question.find({
       _id: { $in: qids },
-    }).lean()) as QuestionDoc[];
+    }).lean()) as unknown as QuestionDoc[];
 
     const qMap: Map<string, QuestionDoc> = new Map(
       qdocs.map((q) => [q._id.toString(), q])
@@ -88,7 +88,7 @@ export async function GET(
     });
 
     /* -----------------------------------------------------
-       Collect PROMPTS (tegasin tipe jadi string[])
+       COLLECT PROMPTS
     ----------------------------------------------------- */
     const promptIds = Array.from(
       new Set(items.map((i) => i.promptId).filter(Boolean))
@@ -105,7 +105,7 @@ export async function GET(
     const [readingPrompts, listeningPrompts] = (await Promise.all([
       ReadingPrompt.find({ _id: { $in: readingIds } }).lean(),
       ListeningPrompt.find({ _id: { $in: listeningIds } }).lean(),
-    ])) as [Array<any>, Array<any>];
+    ])) as [any[], any[]];
 
     const prompts: Record<string, any> = {};
 

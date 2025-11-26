@@ -90,14 +90,23 @@ export default function StructureSimulationPage() {
      TIMER
   --------------------------------------------------- */
   useEffect(() => {
-    if (loading) return;
+  if (loading) return;
 
-    if (tickRef.current) clearInterval(tickRef.current);
+  if (tickRef.current) {
+    clearInterval(tickRef.current);
+  }
 
-    tickRef.current = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+  tickRef.current = setInterval(() => {
+    setTimeLeft((t) => t - 1);
+  }, 1000);
 
-    return () => tickRef.current && clearInterval(tickRef.current);
-  }, [loading]);
+  return () => {
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+    }
+  };
+}, [loading]);
+
 
   /* --------------------------------------------------
      SAVE PROGRESS

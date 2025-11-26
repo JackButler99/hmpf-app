@@ -24,7 +24,7 @@ type AnswerMap = {
   [index: number]: { selected: string | null; section: Question["section"] };
 };
 
-const TEST_MINUTES = 60;
+const TEST_MINUTES = 115;
 const STORAGE_KEY = "toefl_full_sim_answers";
 
 export default function FullSimulationPage() {
@@ -42,7 +42,9 @@ export default function FullSimulationPage() {
   const [currentPrompt, setCurrentPrompt] = useState<Prompt | null>(null);
   const [currentPromptId, setCurrentPromptId] = useState<string | null>(null);
 
-  const tickRef = useRef<NodeJS.Timeout | null>(null);
+  // Timer reference
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const q = questions[current];
 
   /* --------------------------------------------------
@@ -130,12 +132,21 @@ export default function FullSimulationPage() {
   useEffect(() => {
     if (loading) return;
 
-    if (tickRef.current) clearInterval(tickRef.current);
+    if (tickRef.current !== null) {
+      clearInterval(tickRef.current);
+    }
 
-    tickRef.current = setInterval(() => setTimeLeft((t) => t - 1), 1000);
+    tickRef.current = setInterval(() => {
+      setTimeLeft((t) => t - 1);
+    }, 1000);
 
-    return () => tickRef.current && clearInterval(tickRef.current);
+    return () => {
+      if (tickRef.current !== null) {
+        clearInterval(tickRef.current);
+      }
+    };
   }, [loading]);
+
 
   /* --------------------------------------------------
      SAVE PROGRESS (local only)

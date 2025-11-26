@@ -98,20 +98,29 @@ export default function ReadingSimulationPage() {
      TIMER
   --------------------------------------------------------- */
   useEffect(() => {
-    if (loading) return;
+  if (loading) return;
 
-    if (tickRef.current) clearInterval(tickRef.current);
+  if (tickRef.current) {
+    clearInterval(tickRef.current);
+  }
 
-    tickRef.current = setInterval(() => {
-      setTimeLeft((t) => t - 1);
-    }, 1000);
+  tickRef.current = setInterval(() => {
+    setTimeLeft((t) => t - 1);
+  }, 1000);
 
-    return () => tickRef.current && clearInterval(tickRef.current);
-  }, [loading]);
+  return () => {
+    if (tickRef.current) {
+      clearInterval(tickRef.current);
+    }
+  };
+}, [loading]);
 
-  useEffect(() => {
-    if (timeLeft <= 0 && !submitting) handleSubmit();
-  }, [timeLeft, submitting]);
+useEffect(() => {
+  if (timeLeft <= 0 && !submitting) {
+    handleSubmit(); // auto submit
+  }
+}, [timeLeft, submitting]);
+
 
   /* ---------------------------------------------------------
      SAVE PROGRESS

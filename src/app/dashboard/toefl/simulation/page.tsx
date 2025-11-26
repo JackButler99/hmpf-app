@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -100,7 +100,7 @@ export default function SimulationIntroPage() {
   /* -------------------------------------------------------
    * INSTRUCTIONS
    * ----------------------------------------------------- */
-  const instructions: Record<string, JSX.Element> = {
+  const instructions: Record<string, React.ReactNode> = { 
     full: (
       <>
         <p>
