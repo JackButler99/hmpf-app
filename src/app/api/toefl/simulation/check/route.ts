@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import { connectToDB } from "@/lib/mongodb";
 import SimulationSession from "@/models/SimulationSession";
 
+type SessionType = {
+  _id: string;
+  userId: string;
+  mode: string;
+  expiresAt?: Date;
+};
+
 export async function POST(req: Request) {
   await connectToDB();
   const { userId, mode } = await req.json();
 
-  const session = await SimulationSession.findOne({ userId, mode }).lean();
+  // Force the document into correct type
+  const session = (await SimulationSession.findOne({ userId, mode }).lean()) as
+    | SessionType
+    | null;
 
   // Tidak ada session → dianggap tidak exist
   if (!session) {
@@ -15,7 +25,8 @@ export async function POST(req: Request) {
 
   const now = Date.now();
   const expired =
-    session.expiresAt && new Date(session.expiresAt).getTime() < now;
+    session.expiresAt &&
+    new Date(session.expiresAt).getTime() < now;
 
   // Jika expired → delete + exists: false
   if (expired) {

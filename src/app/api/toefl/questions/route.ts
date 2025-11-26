@@ -36,7 +36,7 @@ function groupByPrompt(list: RawQ[]) {
   return map;
 }
 
-function sanitize(q: RawQ) {
+function sanitize(q: any) {
   return {
     _id: String(q._id),
     section: q.section === "grammar" ? "structure" : q.section,
@@ -101,8 +101,10 @@ export async function GET(req: NextRequest) {
      * MODE A — ADMIN MODE
      * ------------------------------------------------------ */
     if (mode === "admin") {
-      const full = await Toefl_Question.find().sort({ createdAt: -1 });
-      return NextResponse.json({ questions: full });
+      const full = await Toefl_Question.find().sort({ createdAt: -1 }).lean();
+      return NextResponse.json({
+        questions: (full as any[]).map(sanitize),
+      });
     }
 
     /* --------------------------------------------------------
@@ -115,14 +117,16 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "packageId required" }, { status: 400 });
       }
 
-      const qs: RawQ[] = await Toefl_Question.find({
+      const qs = await Toefl_Question.find({
         section: "listening",
         promptId: packageId,
       })
         .sort({ question_number: 1 })
         .lean();
 
-      return NextResponse.json({ questions: qs.map(sanitize) });
+      return NextResponse.json({
+        questions: (qs as any[]).map(sanitize),
+      });
     }
 
     /* --------------------------------------------------------
@@ -142,37 +146,40 @@ export async function GET(req: NextRequest) {
         .sort({ question_number: 1 })
         .lean();
 
-      return NextResponse.json({ questions: qs.map(sanitize) });
+      return NextResponse.json({
+        questions: (qs as any[]).map(sanitize),
+      });
     }
 
     /* --------------------------------------------------------
-     * MODE D — STRUCTURE ONLY (NEW!) 
+     * MODE D — STRUCTURE ONLY
      * ------------------------------------------------------ */
     if (mode === "structure") {
       const all = await Toefl_Question.find().lean();
-
-      const structureAll = all.filter(
+      const structureAll = (all as any[]).filter(
         (q) => q.section === "grammar" || q.section === "structure"
       );
 
       const picked = shuffle(structureAll).slice(0, 40);
 
-      return NextResponse.json({ questions: picked.map(sanitize) });
+      return NextResponse.json({
+        questions: (picked as any[]).map(sanitize),
+      });
     }
 
     /* --------------------------------------------------------
      * MODE E — FULL SIMULATION (DEFAULT)
      * ------------------------------------------------------ */
     const cfg = sim_config.full;
-    const all: RawQ[] = await Toefl_Question.find().lean();
-
+    const all = (await Toefl_Question.find().lean()) as unknown as RawQ[];
+    
     const listeningAll = all.filter((q) => q.section === "listening");
     const readingAll = all.filter((q) => q.section === "reading");
     const structureAll = all.filter(
       (q) => q.section === "grammar" || q.section === "structure"
     );
 
-    /* -------- LISTENING -------- */
+    // ---- LISTENING ----
     const listeningSorted = listeningAll.slice().sort((a, b) => {
       if (String(a.promptId) === String(b.promptId)) {
         return (a.question_number ?? 999) - (b.question_number ?? 999);
@@ -188,7 +195,7 @@ export async function GET(req: NextRequest) {
       .slice(0, cfg.listeningPrompts)
       .flat();
 
-    /* -------- READING -------- */
+    // ---- READING ----
     const readingSorted = readingAll.slice().sort((a, b) => {
       if (String(a.promptId) === String(b.promptId)) {
         return (a.question_number ?? 999) - (b.question_number ?? 999);
@@ -204,18 +211,15 @@ export async function GET(req: NextRequest) {
       .slice(0, cfg.readingPassages)
       .flat();
 
-    /* -------- STRUCTURE -------- */
+    // ---- STRUCTURE ----
     const structurePicked = shuffle(structureAll).slice(0, cfg.structureQuestions);
 
-    /* -------- MERGE FINAL -------- */
-    const finalTest = [
-      ...listeningPicked,
-      ...structurePicked,
-      ...readingPicked,
-    ];
+    // ---- MERGE FINAL ----
+    const finalTest = [...listeningPicked, ...structurePicked, ...readingPicked];
 
-    return NextResponse.json({ questions: finalTest.map(sanitize) });
-
+    return NextResponse.json({
+      questions: finalTest.map(sanitize),
+    });
   } catch (err) {
     console.error("GET questions error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });

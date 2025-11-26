@@ -5,12 +5,21 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+type UserType = {
+  _id: string;
+  name: string;
+  email: string;
+  isAdmin: boolean;
+  isEditor: boolean;
+};
+
 export default function MembersPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Access control
   useEffect(() => {
     if (status === 'loading') return;
     if (!session?.user?.isAdmin && !session?.user?.isEditor) {
@@ -18,6 +27,7 @@ export default function MembersPage() {
     }
   }, [session, status, router]);
 
+  // Fetch users
   useEffect(() => {
     const fetchUsers = async () => {
       const res = await fetch('/api/users');
@@ -29,29 +39,44 @@ export default function MembersPage() {
     fetchUsers();
   }, []);
 
-  const handleRoleChange = async (id: string, role: 'isAdmin' | 'isEditor', value: boolean) => {
-    const user = users.find((u: any) => u._id === id);
+  const handleRoleChange = async (
+    id: string,
+    role: 'isAdmin' | 'isEditor',
+    value: boolean
+  ) => {
+    const user = users.find((u) => u._id === id);
+
+    // Prevent undefined spread error
+    if (!user) {
+      console.error('User not found:', id);
+      return;
+    }
+
     const updatedUser = { ...user, [role]: value };
 
     const res = await fetch('/api/users', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        id: updatedUser._id,
+        id,
         isAdmin: updatedUser.isAdmin,
         isEditor: updatedUser.isEditor,
       }),
     });
 
     const updated = await res.json();
-    setUsers(users.map((u: any) => (u._id === updated._id ? updated : u)));
+
+    // Update UI safely
+    setUsers((prev) =>
+      prev.map((u) => (u._id === updated._id ? updated : u))
+    );
   };
 
   if (loading) return <div className="p-6">Loading users...</div>;
 
   return (
     <main className="p-6 bg-gray-50 min-h-screen">
-      {/* 🔙 Back button */}
+      {/* Back button */}
       <div className="mb-4">
         <Link
           href="/admin-dashboard"
@@ -73,7 +98,7 @@ export default function MembersPage() {
           </tr>
         </thead>
         <tbody>
-          {users.map((user: any) => (
+          {users.map((user) => (
             <tr key={user._id} className="border-t hover:bg-gray-50">
               <td className="p-3">{user.name}</td>
               <td className="p-3">{user.email}</td>
@@ -82,7 +107,9 @@ export default function MembersPage() {
                   <input
                     type="checkbox"
                     checked={user.isAdmin}
-                    onChange={(e) => handleRoleChange(user._id, 'isAdmin', e.target.checked)}
+                    onChange={(e) =>
+                      handleRoleChange(user._id, 'isAdmin', e.target.checked)
+                    }
                   />
                 ) : (
                   <span>{user.isAdmin ? 'Yes' : 'No'}</span>
@@ -93,7 +120,9 @@ export default function MembersPage() {
                   <input
                     type="checkbox"
                     checked={user.isEditor}
-                    onChange={(e) => handleRoleChange(user._id, 'isEditor', e.target.checked)}
+                    onChange={(e) =>
+                      handleRoleChange(user._id, 'isEditor', e.target.checked)
+                    }
                   />
                 ) : (
                   <span>{user.isEditor ? 'Yes' : 'No'}</span>

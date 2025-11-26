@@ -5,37 +5,78 @@ import Toefl_Question from "@/models/Toefl_Question";
 import ReadingPrompt from "@/models/Toefl_ReadingPrompt";
 import ListeningPrompt from "@/models/Toefl_ListeningPrompt";
 
-type Params = { params: { id: string } };
+/* ---------------------------------------------------------
+   TYPE DEFINITIONS
+--------------------------------------------------------- */
+type HistoryRow = {
+  questionId: string;
+  section: "reading" | "listening" | "grammar" | "structure";
+  promptId?: string | null;
+  userAnswer: string | null;
+  correctAnswer: string;
+  isCorrect: boolean;
+  explanation?: string;
+};
 
-export async function GET(_req: NextRequest, { params }: Params) {
+type QuestionDoc = {
+  _id: any;
+  questionText: string;
+  options: string[];
+  section: string;
+  promptId?: any;
+  question_number?: number | null;
+};
+
+type HistoryDocLean = {
+  _id: any;
+  userId: string;
+  mode: string;
+  score: number;
+  createdAt: Date;
+  questions: HistoryRow[];
+};
+
+/* ---------------------------------------------------------
+   GET /api/toefl/simulation/history/[id]
+--------------------------------------------------------- */
+export async function GET(
+  req: NextRequest,
+  {params}: {params: {id: string}}
+) {
   try {
-    await connectToDB();
-
     const { id } = params;
 
-    const history = await Toefl_SimulationHistory.findById(id).lean();
+    await connectToDB();
+
+    // Jelaskan tipe hasil lean() agar TS tenang (tanpa ubah data)
+    const history = (await Toefl_SimulationHistory.findById(id).lean()) as
+      | HistoryDocLean
+      | null;
+
     if (!history) {
       return NextResponse.json({ error: "History not found" }, { status: 404 });
     }
 
-    // -----------------------------------------------
-    // FETCH ALL QUESTION DOCUMENTS
-    // -----------------------------------------------
-    const qids = history.questions.map((q: any) => q.questionId);
-    const qdocs = await Toefl_Question.find({ _id: { $in: qids } }).lean();
+    /* -----------------------------------------------------
+       FETCH QUESTIONS
+    ----------------------------------------------------- */
+    const qids = (history.questions as HistoryRow[]).map((q) => q.questionId);
 
-    const qMap = new Map(qdocs.map((q: any) => [q._id.toString(), q]));
+    const qdocs = (await Toefl_Question.find({
+      _id: { $in: qids },
+    }).lean()) as QuestionDoc[];
 
-    // -----------------------------------------------
-    // BUILD REVIEW ITEMS
-    // -----------------------------------------------
-    const items = history.questions.map((row: any) => {
-      const qdoc = qMap.get(row.questionId.toString());
+    const qMap: Map<string, QuestionDoc> = new Map(
+      qdocs.map((q) => [q._id.toString(), q])
+    );
+
+    const items = (history.questions as HistoryRow[]).map((row) => {
+      const qdoc = qMap.get(String(row.questionId));
 
       return {
-        questionId: row.questionId.toString(),
+        questionId: String(row.questionId),
         section: row.section === "grammar" ? "structure" : row.section,
-        promptId: row.promptId ? row.promptId.toString() : null,
+        promptId: row.promptId ? String(row.promptId) : null,
         userAnswer: row.userAnswer,
         correctAnswer: row.correctAnswer,
         isCorrect: row.isCorrect,
@@ -46,14 +87,13 @@ export async function GET(_req: NextRequest, { params }: Params) {
       };
     });
 
-    // -----------------------------------------------
-    // COLLECT ALL PROMPT IDs
-    // -----------------------------------------------
+    /* -----------------------------------------------------
+       Collect PROMPTS (tegasin tipe jadi string[])
+    ----------------------------------------------------- */
     const promptIds = Array.from(
-      new Set(items.map((i: any) => i.promptId).filter(Boolean))
-    );
+      new Set(items.map((i) => i.promptId).filter(Boolean))
+    ) as string[];
 
-    // Determine reading/listening prompt usage
     const readingIds = promptIds.filter((pid) =>
       items.some((i) => i.promptId === pid && i.section === "reading")
     );
@@ -62,52 +102,46 @@ export async function GET(_req: NextRequest, { params }: Params) {
       items.some((i) => i.promptId === pid && i.section === "listening")
     );
 
-    const [readingPrompts, listeningPrompts] = await Promise.all([
+    const [readingPrompts, listeningPrompts] = (await Promise.all([
       ReadingPrompt.find({ _id: { $in: readingIds } }).lean(),
       ListeningPrompt.find({ _id: { $in: listeningIds } }).lean(),
-    ]);
+    ])) as [Array<any>, Array<any>];
 
-    // -----------------------------------------------
-    // BUILD PROMPT MAP
-    // -----------------------------------------------
     const prompts: Record<string, any> = {};
 
     for (const rp of readingPrompts) {
-      prompts[rp._id.toString()] = {
-        _id: rp._id.toString(),
+      prompts[String(rp._id)] = {
+        _id: String(rp._id),
         type: "reading",
-        passage: rp.passage || "",
+        passage: rp.passage ?? "",
       };
     }
 
     for (const lp of listeningPrompts) {
-      prompts[lp._id.toString()] = {
-        _id: lp._id.toString(),
+      prompts[String(lp._id)] = {
+        _id: String(lp._id),
         type: "listening",
-        passage: lp.passage || "",
-        audioUrl: lp.audioUrl || "",
+        audioUrl: lp.audioUrl ?? "",
+        transcript: lp.transcript ?? "",
       };
     }
 
-    // -----------------------------------------------
-    // RETURN FINAL SHAPE (COMPATIBLE WITH REVIEW PAGE)
-    // -----------------------------------------------
+    /* -----------------------------------------------------
+       RETURN
+    ----------------------------------------------------- */
     return NextResponse.json({
       success: true,
       history: {
-        _id: history._id.toString(),
+        _id: String(history._id),
         userId: history.userId,
         mode: history.mode,
         score: history.score,
         createdAt: history.createdAt,
       },
-
       items,
-      questions: items, // 🔥 alias untuk backward compatibility
-
+      questions: items,
       prompts,
     });
-
   } catch (err) {
     console.error("History GET error:", err);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
