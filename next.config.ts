@@ -4,6 +4,7 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  output: "standalone",
   // kalau pakai image optimization di cloud, uncomment ini:
   // images: {
   //   unoptimized: true,
