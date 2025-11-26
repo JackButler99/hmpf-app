@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route";
+import { authOptions } from "../api/auth/[...nextauth]/auth.config";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { FiUsers, FiFileText, FiTool, FiCalendar } from "react-icons/fi";

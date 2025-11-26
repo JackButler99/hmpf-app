@@ -1,6 +1,6 @@
 // app/dashboard/layout.tsx
 import { getServerSession } from "next-auth";
-import { authOptions } from "../api/auth/[...nextauth]/route"; // Adjust based on where your authOptions are
+import { authOptions } from "../api/auth/[...nextauth]/auth.config";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
