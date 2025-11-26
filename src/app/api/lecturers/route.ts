@@ -1,39 +1,80 @@
-import { connectToDB } from '@/lib/mongodb';
-import Lecturer from '@/models/Lecturer';
-import { NextResponse } from 'next/server';
+// /app/api/lecturers/route.ts
+import { NextRequest, NextResponse } from "next/server";
+import { connectToDB } from "@/lib/mongodb";
+import Lecturer from "@/models/Lecturer";
 
-export async function GET(req: Request) {
+export const dynamic = "force-dynamic";
+
+/* ============================================================
+   GET — SEARCH or FETCH ALL (PAGINATED)
+   ============================================================ */
+export async function GET(req: NextRequest) {
   await connectToDB();
 
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get('q');
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
+
+  const q = (searchParams.get("q") || "").trim();
+  const page = Math.max(Number(searchParams.get("page") || 1), 1);
+  const limit = Math.min(Number(searchParams.get("limit") || 10), 50);
   const skip = (page - 1) * limit;
 
-  if (search) {
-    const lecturers = await Lecturer.find({
-      name: { $regex: search, $options: 'i' }
-    }).limit(10);
+  const filter =
+    q.length >= 2
+      ? {
+          $or: [
+            { name: { $regex: q, $options: "i" } },
+            { research_fields: { $regex: q, $options: "i" } }, // match array
+          ],
+        }
+      : {};
 
-    return NextResponse.json(lecturers);
-  }
+  const [items, total] = await Promise.all([
+    Lecturer.find(filter).sort({ name: 1 }).skip(skip).limit(limit).lean(),
+    Lecturer.countDocuments(filter),
+  ]);
 
-  const total = await Lecturer.countDocuments();
-  const lecturers = await Lecturer.find().skip(skip).limit(limit).sort({ name: 1 });
-
-  return NextResponse.json({ data: lecturers, total });
+  return NextResponse.json({
+    page,
+    limit,
+    total,
+    items,
+  });
 }
 
-export async function POST(req: Request) {
-  await connectToDB();
-  const body = await req.json();
-  const { name, phone } = body;
+/* ============================================================
+   POST — CREATE NEW LECTURER
+   ============================================================ */
+export async function POST(req: NextRequest) {
+  try {
+    await connectToDB();
 
-  if (!name || !phone) {
-    return NextResponse.json({ message: 'Name and phone are required' }, { status: 400 });
+    const body = await req.json();
+    const { name, phones, research_fields } = body;
+
+    if (!name) {
+      return NextResponse.json(
+        { error: "Name is required" },
+        { status: 400 }
+      );
+    }
+
+    const newLecturer = await Lecturer.create({
+      name,
+      phones: Array.isArray(phones) ? phones : [],
+      research_fields: Array.isArray(research_fields)
+        ? research_fields
+        : [],
+    });
+
+    return NextResponse.json(
+      { message: "Lecturer created", lecturer: newLecturer },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("POST /lecturers error:", err);
+    return NextResponse.json(
+      { error: "Failed to create lecturer" },
+      { status: 500 }
+    );
   }
-
-  const newLecturer = await Lecturer.create({ name, phone });
-  return NextResponse.json(newLecturer, { status: 201 });
 }

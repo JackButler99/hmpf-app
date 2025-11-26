@@ -1,12 +1,33 @@
 // src/models/Lecturer.js
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const lecturerSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  phone: { type: String, required: false }
-});
+const lecturerSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-// ✅ Use existing model if already compiled
-const Lecturer = mongoose.models.Lecturer || mongoose.model('Lecturer', lecturerSchema);
+    // Sesuai JSON dari database
+    phones: {
+      type: [String],
+      default: [],
+    },
+
+    research_fields: {
+      type: [String],
+      default: [],
+    },
+  },
+  {
+    timestamps: true,
+    collection: "lecturers", // ⭐ MATCH dengan nama koleksi di MongoDB
+  }
+);
+
+// Hindari recompile model
+const Lecturer =
+  mongoose.models.Lecturer || mongoose.model("Lecturer", lecturerSchema);
 
 export default Lecturer;

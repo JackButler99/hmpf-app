@@ -1,0 +1,17 @@
+.ql-editor {
+  white-space: pre-wrap !important;
+  font-size: 18px !important;
+  line-height: 1.6 !important;
+  min-height: 300px;
+}
+
+/* 👉 Di sini kuncinya indent paragraf */
+.ql-editor p {
+  text-indent: 2em; /* bisa diganti 1.5em / 3em sesuai selera */
+}
+
+
+.ql-container {
+  min-height: 300px;            /* keep the box tall */
+}
+

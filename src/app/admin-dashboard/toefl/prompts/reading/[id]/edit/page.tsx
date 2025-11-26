@@ -2,14 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import ReadingPromptForm from '@/app/admin-dashboard/toefl/prompts/reading/components/Form';
 
 export default function EditReadingPromptPage() {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
 
-  const [title, setTitle] = useState('');
-  const [passage, setPassage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [initialData, setInitialData] = useState<{
+    title?: string;
+    passage?: string;
+    passageNumber?: number;
+  }>({});
 
   useEffect(() => {
     if (!id) return;
@@ -17,18 +22,33 @@ export default function EditReadingPromptPage() {
     fetch(`/api/toefl/prompts/reading/${id}`)
       .then((res) => res.json())
       .then((data) => {
-        setTitle(data.prompt.title || '');
-        setPassage(data.prompt.passage || '');
+        const prompt = data.prompt;
+
+        setInitialData({
+          title: prompt.title || '',
+          passage: prompt.passage || '',
+          passageNumber: prompt.passageNumber ?? 1,
+        });
+
+        setLoading(false);
       });
   }, [id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: { 
+    title: string; 
+    passage: string; 
+    passageNumber: number; 
+  }) => {
 
     const res = await fetch(`/api/toefl/prompts/reading/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ section: 'reading', title, passage }),
+      body: JSON.stringify({
+        section: 'reading',
+        title: data.title,
+        passage: data.passage,
+        passageNumber: data.passageNumber,
+      }),
     });
 
     if (res.ok) {
@@ -39,37 +59,19 @@ export default function EditReadingPromptPage() {
     }
   };
 
+  if (loading) return <p className="p-6 text-gray-500">Loading...</p>;
+
   return (
     <main className="min-h-screen bg-gray-100 p-6">
-      <h1 className="text-2xl font-bold mb-4 text-gray-800">Edit Reading Prompt</h1>
+      <h1 className="text-2xl font-bold mb-4 text-gray-800">
+        Edit Reading Prompt
+      </h1>
 
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow space-y-4">
-        <div>
-          <label className="font-medium block mb-1">Title (optional)</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border px-3 py-2 rounded"
-            placeholder="Title"
-          />
-        </div>
-
-        <div>
-          <label className="font-medium block mb-1">Passage</label>
-          <textarea
-            value={passage}
-            onChange={(e) => setPassage(e.target.value)}
-            rows={10}
-            required
-            className="w-full border px-3 py-2 rounded"
-          />
-        </div>
-
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-          Update Prompt
-        </button>
-      </form>
+      <ReadingPromptForm
+        initialData={initialData}
+        onSubmit={handleSubmit}
+        isEdit
+      />
     </main>
   );
 }

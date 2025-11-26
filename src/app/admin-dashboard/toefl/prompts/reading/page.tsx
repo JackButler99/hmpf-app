@@ -7,6 +7,7 @@ type ReadingPrompt = {
   _id: string;
   title?: string;
   passage: string;
+  passageNumber:number;
 };
 
 export default function ReadingPromptManager() {
